@@ -26,24 +26,39 @@ activity_dt <- data.table(read.csv("activity.csv"))
 ```
 
 ## What is mean total number of steps taken per day?
+1. Make a histogram of the total number of steps taken each day
 
 ```r
-daily_activity_dt <- activity_dt[,list(total_daily_steps=sum(steps, na.rm = TRUE)),by=date]
+daily_activity_dt <- activity_dt[,list(total_daily_steps=sum(steps)),by=date]
+write.table(daily_activity_dt, file = "original.csv", sep = ",")
+head(daily_activity_dt)
+```
+
+```
+##          date total_daily_steps
+## 1: 2012-10-01                NA
+## 2: 2012-10-02               126
+## 3: 2012-10-03             11352
+## 4: 2012-10-04             12116
+## 5: 2012-10-05             13294
+## 6: 2012-10-06             15420
 ```
 
 ```r
-hist(daily_activity_dt$total_daily_steps, col="lightblue",
-     main = "Daily step histogram", xlab = "Daily steps per day")
+hist(daily_activity_dt$total_daily_steps, col = "lightblue",
+     main = "Daily step histogram", xlab = "Daily steps per day", breaks = 20)
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-3-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png) 
+2. Calculate and report the mean and median total number of steps taken
+per day
 
 ```r
 mean(daily_activity_dt$total_daily_steps, na.rm = TRUE)
 ```
 
 ```
-## [1] 9354.23
+## [1] 10766.19
 ```
 
 ```r
@@ -51,30 +66,31 @@ median(daily_activity_dt$total_daily_steps, na.rm = TRUE)
 ```
 
 ```
-## [1] 10395
+## [1] 10765
 ```
 
 
 ## What is the average daily activity pattern?
+1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis)
+and the average number of steps taken, averaged across all days (y-axis)  
 
 ```r
-interval_steps_dt <- activity_dt[,list(total_daily_steps=sum(steps, na.rm = TRUE)),by=interval]
-```
-
-```r
+interval_steps_dt <- activity_dt[,list(avg_daily_steps=mean(steps, na.rm = TRUE)),by=interval]
 plot(interval_steps_dt, type = "l", ylab = "Avg of steps taken", xlab = "Interval")
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-5-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-4-1.png) 
+  
+2. Which 5-minute interval, on average across all the days in the dataset,
+contains the maximum number of steps?  
 
 ```r
-max_steps_per_interval <- max(interval_steps_dt$total_daily_steps)
-interval_steps_dt[total_daily_steps  == max_steps_per_interval]
+interval_steps_dt[avg_daily_steps ==  max(interval_steps_dt$avg_daily_steps)]
 ```
 
 ```
-##    interval total_daily_steps
-## 1:      835             10927
+##    interval avg_daily_steps
+## 1:      835        206.1698
 ```
 
 
@@ -96,7 +112,9 @@ the mean/median for that day, or the mean for that 5-minute interval, etc.
 
 ```r
 activity_na_dt <- activity_dt[!complete.cases(activity_dt)]
-lookup_avg_step <- function (n_interval) { interval_steps_dt$total_daily_steps[interval_steps_dt$interval == n_interval] }
+lookup_avg_step <- function (n_interval) {
+        interval_steps_dt$avg_daily_steps[interval_steps_dt$interval == n_interval]
+        }
 ```
 
 3. Create a new dataset that is equal to the original dataset but with the
@@ -106,17 +124,22 @@ missing data filled in.
 activity_na_dt$steps = sapply(activity_na_dt$interval, lookup_avg_step)
 activity_ok_dt <- activity_dt[complete.cases(activity_dt)]
 activity_cleaned_dt <- rbind(activity_ok_dt, activity_na_dt)[order(date, interval)]
-head(activity_cleaned_dt)
+head(activity_cleaned_dt, 289)
 ```
 
 ```
-##    steps       date interval
-## 1:    91 2012-10-01        0
-## 2:    18 2012-10-01        5
-## 3:     7 2012-10-01       10
-## 4:     8 2012-10-01       15
-## 5:     4 2012-10-01       20
-## 6:   111 2012-10-01       25
+##          steps       date interval
+##   1: 1.7169811 2012-10-01        0
+##   2: 0.3396226 2012-10-01        5
+##   3: 0.1320755 2012-10-01       10
+##   4: 0.1509434 2012-10-01       15
+##   5: 0.0754717 2012-10-01       20
+##  ---                              
+## 285: 3.3018868 2012-10-01     2340
+## 286: 0.6415094 2012-10-01     2345
+## 287: 0.2264151 2012-10-01     2350
+## 288: 1.0754717 2012-10-01     2355
+## 289: 0.0000000 2012-10-02        0
 ```
 
 4. Make a histogram of the total number of steps taken each day and Calculate
@@ -127,33 +150,52 @@ daily number of steps?
 
 ```r
 daily_activity_dt <- activity_cleaned_dt[,list(total_daily_steps=sum(steps, na.rm = TRUE)),by=date]
+write.table(daily_activity_dt, file = "new.csv", sep = ",")
+head(daily_activity_dt)
+```
+
+```
+##          date total_daily_steps
+## 1: 2012-10-01          10766.19
+## 2: 2012-10-02            126.00
+## 3: 2012-10-03          11352.00
+## 4: 2012-10-04          12116.00
+## 5: 2012-10-05          13294.00
+## 6: 2012-10-06          15420.00
 ```
 
 ```r
 hist(daily_activity_dt$total_daily_steps, col="lightblue",
-     main = "Daily step histogram (Imputed)", xlab = "Daily steps per day")
+     main = "Daily step histogram (Imputed)", xlab = "Daily steps per day", breaks = 20)
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-10-1.png) 
+  
+Mean of imputed data
 
 ```r
-mean(daily_activity_dt$total_daily_steps, na.rm = TRUE)
+mean(daily_activity_dt$total_daily_steps)
 ```
 
 ```
-## [1] 84188.07
+## [1] 10766.19
 ```
+  
+Median of imputed data
 
 ```r
-median(daily_activity_dt$total_daily_steps, na.rm = TRUE)
+median(daily_activity_dt$total_daily_steps)
 ```
 
 ```
-## [1] 11458
+## [1] 10766.19
 ```
+  
+The mean number of steps of imputed and the original data are the same
+  
+The median number of steps of imputed data is approximately 1 step more than
+the original data
 
-The  mean number of steps using imputed data has increased by a factor of **9**
-relative to the actual recorded data
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
@@ -181,7 +223,19 @@ activity_cleaned_df["day_type"] <- as.factor(sapply(dates, is_week_day))
 across all weekday days or weekend days (y-axis).
 
 ```r
-activity_cleaned_dt <- data.table(activity_cleaned_df)
-activity_cleaned_week_end_dt <- activity_cleaned_dt[, activity_cleaned_dt$day_type == "weekend"]
-activity_cleaned_week_day_dt <- activity_cleaned_dt[, activity_cleaned_dt$day_type == "weekday"]
+# activity_cleaned_dt <- data.table(activity_cleaned_df)
+
+activity_cleaned_week_end_dt <- data.table(subset(activity_cleaned_df, day_type == "weekend"))
+activity_cleaned_week_day_dt <- data.table(subset(activity_cleaned_df, day_type == "weekday"))
+
+interval_steps_week_end_dt <- activity_cleaned_week_end_dt[,list(total_daily_steps=sum(steps)),by=interval]
+interval_steps_week_day_dt <- activity_cleaned_week_day_dt[,list(total_daily_steps=sum(steps)),by=interval]
+
+par(mfrow=c(2,1))
+plot(interval_steps_week_end_dt, type = "l", ylab = "Number of Steps", 
+     xlab = "Interval", main="week end")
+plot(interval_steps_week_day_dt, type = "l", ylab = "Number of Steps",
+     xlab = "Interval", main="week day")
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-14-1.png) 
